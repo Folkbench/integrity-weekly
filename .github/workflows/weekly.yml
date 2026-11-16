@@ -1,0 +1,87 @@
+name: Publish weekly public snapshots
+on:
+  schedule:
+    - cron: '57 12 * * *'
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        options: [publish, withdraw, restore]
+        default: publish
+      week:
+        description: 'For withdraw/restore: current or an archived ISO week such as 2026-W47'
+        type: string
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: weekly-public-snapshot
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'Folkbench/integrity-weekly' && github.ref == 'refs/heads/main' && vars.PUBLIC_DISTRIBUTION_ENABLED == 'true'
+    runs-on: ubuntu-22.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Require reviewed tooling revision
+        env:
+          TOOLING_REF: ${{ vars.FOLKBENCH_TOOLING_SHA }}
+        run: test "${#TOOLING_REF}" -eq 40 && [[ "$TOOLING_REF" =~ ^[a-f0-9]+$ ]]
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          path: reports
+          fetch-depth: 0
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: Folkbench/folkbench
+          ref: ${{ vars.FOLKBENCH_TOOLING_SHA }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: Folkbench/folkbench-data
+          path: data
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: 1.3.14
+      - name: Apply requested withdrawal or restoration
+        if: github.event_name == 'workflow_dispatch' && inputs.action != 'publish'
+        env:
+          ACTION: ${{ inputs.action }}
+          WEEK: ${{ inputs.week }}
+        run: |
+          if [ "$ACTION" = restore ]; then
+            bun tooling/scripts/distribution/cli.ts weekly-withdraw --root reports --week "$WEEK" --restore
+          else
+            bun tooling/scripts/distribution/cli.ts weekly-withdraw --root reports --week "$WEEK"
+          fi
+      - name: Seal completed natural weeks
+        run: bun tooling/scripts/distribution/cli.ts weekly-sync --root reports --data-root data
+      - name: Commit new immutable reports through normal hooks
+        env:
+          FOLKBENCH_DISTRIBUTION_TOOL_ROOT: ${{ github.workspace }}/tooling
+        run: |
+          git -C reports config core.hooksPath .githooks
+          git -C reports config user.name 'github-actions[bot]'
+          git -C reports config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C reports add --all
+          if ! git -C reports diff --cached --quiet; then
+            git -C reports commit -m '内容：自动更新公开快照周报及展示状态'
+            git -C reports push origin HEAD:main
+          fi
+      - name: Build archived weeks and the current-week page
+        env:
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+          BING_SITE_VERIFICATION: ${{ vars.BING_SITE_VERIFICATION }}
+          BAIDU_SITE_VERIFICATION: ${{ vars.BAIDU_SITE_VERIFICATION }}
+        run: bun tooling/scripts/distribution/cli.ts weekly-site --root reports --data-root data --out dist
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          path: dist
+      - id: deploy
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
