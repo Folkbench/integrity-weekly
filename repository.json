@@ -1,0 +1,15 @@
+{
+  "owner": "Folkbench",
+  "name": "integrity-weekly",
+  "visibility": "public",
+  "default_branch": "main",
+  "description": "由 Folkbench 维护并经审核发布的探针公开快照周报",
+  "homepage": "https://folkbench.github.io/integrity-weekly/",
+  "topics": [
+    "llm",
+    "ai-api",
+    "public-data",
+    "folkbench",
+    "model-identity"
+  ]
+}
