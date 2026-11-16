@@ -18,3 +18,9 @@ A、B 同时上线，无七天等待，也不要求逐期人工审核。每日�
 - 更正记录放在 corrections/，不覆盖已封存的周报文件。
 
 所有回到主站的链接带 pages / integrity-weekly 的 UTM。默认不采集 github.io 站内访问量；后续如启用，只复用现有 PostHog 项目。
+
+## 徽章
+
+```markdown
+[![公开快照](https://folkbench.github.io/integrity-weekly/badge.svg)](https://folkbench.github.io/integrity-weekly/)
+```
