@@ -3,13 +3,25 @@
   "name": "integrity-weekly",
   "visibility": "public",
   "default_branch": "main",
-  "description": "由 Folkbench 维护并经审核发布的探针公开快照周报",
+  "description": "由 Folkbench 维护并经审核发布的探针公开快照周报 | 中转站检测周报：AI API中转站模型身份探针与一致率观察汇总（排序按站点规则，含合作档位与运营加权，部分数据为展示样本）",
   "homepage": "https://folkbench.github.io/integrity-weekly/",
   "topics": [
-    "llm",
     "ai-api",
-    "public-data",
+    "api-proxy",
+    "api-relay",
+    "benchmark",
+    "claude",
     "folkbench",
-    "model-identity"
+    "gemini",
+    "gpt",
+    "llm",
+    "llm-api",
+    "llm-evaluation",
+    "model-detection",
+    "model-identity",
+    "openai",
+    "public-data",
+    "relay-api",
+    "weekly-report"
   ]
 }
